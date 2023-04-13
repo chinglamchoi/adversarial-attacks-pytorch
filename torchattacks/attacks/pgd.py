@@ -37,7 +37,7 @@ class PGD(Attack):
         self.random_start = random_start
         self.supported_mode = ['default', 'targeted']
 
-    def forward(self, images, labels):
+    def forward(self, images, labels, model):
         r"""
         Overridden.
         """
@@ -59,7 +59,9 @@ class PGD(Attack):
 
         for _ in range(self.steps):
             adv_images.requires_grad = True
-            outputs = self.get_logits(adv_images)
+            if self._normalization_applied:
+                adv_images = self.normalize(adv_images)
+            outputs = model(adv_images)
 
             # Calculate loss
             if self.targeted:
