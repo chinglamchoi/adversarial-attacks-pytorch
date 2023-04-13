@@ -17,7 +17,6 @@ class SPAL2(Attack):
         self.supported_mode = ['default', 'targeted']
         self.device = device
         self.keep_ratio, self.minus, self.rand = keep_ratio, minus, rand
-        del self.model
 
     def apply_prune_mask(self, net, keep_masks):
         handles = []
