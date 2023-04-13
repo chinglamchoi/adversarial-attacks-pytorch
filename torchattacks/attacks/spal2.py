@@ -17,6 +17,7 @@ class SPAL2(Attack):
         self.supported_mode = ['default', 'targeted']
         self.device = device
         self.keep_ratio, self.minus, self.rand = keep_ratio, minus, rand
+        del self.model
 
     def apply_prune_mask(self, net, keep_masks):
         handles = []
@@ -36,7 +37,7 @@ class SPAL2(Attack):
         for handle in handles:
             handle.remove()
 
-    def forward(self, images, labels):
+    def forward(self, images, labels, model):
         images = images.clone().detach().to(self.device)
         labels = labels.clone().detach().to(self.device)
 
@@ -57,9 +58,9 @@ class SPAL2(Attack):
             delta *= r/n*self.eps
             adv_images = torch.clamp(adv_images + delta, min=0, max=1).detach()
 
-        keep_masks = SNIP(adv_images, labels, self.model, self.keep_ratio, self.device, minus=self.minus, rand=self.rand)
-        subnet = copy.deepcopy(self.model).to(self.device)
-        handles = self.apply_prune_mask(self.model, keep_masks)
+        keep_masks = SNIP(adv_images, labels, model, self.keep_ratio, self.device, minus=self.minus, rand=self.rand)
+        subnet = copy.deepcopy(model).to(self.device)
+        handles = self.apply_prune_mask(subnet, keep_masks)
 
         for _ in range(self.steps):
             adv_images.requires_grad = True
