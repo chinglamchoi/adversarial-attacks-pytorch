@@ -9,7 +9,6 @@ class SPA(Attack):
 
     def __init__(self, model, device, eps=8/255, alpha=2/255, steps=10, random_start=True, eps_for_division=1e-10, keep_ratio=0.05, minus=False, rand=False):
         super().__init__("SPA", model)
-        self.model0 = model
         self.eps = eps
         self.alpha = alpha
         self.steps = steps
@@ -36,7 +35,7 @@ class SPA(Attack):
         for handle in handles:
             handle.remove()
 
-    def forward(self, images, labels):
+    def forward(self, images, labels, model):
         images = images.clone().detach().to(self.device)
         labels = labels.clone().detach().to(self.device)
 
@@ -52,13 +51,15 @@ class SPA(Attack):
                 torch.empty_like(adv_images).uniform_(-self.eps, self.eps)
             adv_images = torch.clamp(adv_images, min=0, max=1).detach()
 
-        keep_masks = SNIP(adv_images, labels, self.model0, self.keep_ratio, self.device, minus=self.minus, rand=self.rand)
-        self.model = copy.deepcopy(self.model0).to(self.device)
-        handles = self.apply_prune_mask(self.model, keep_masks)
+        keep_masks = SNIP(adv_images, labels, model, self.keep_ratio, self.device, minus=self.minus, rand=self.rand)
+        subnet = copy.deepcopy(model).to(self.device)
+        handles = self.apply_prune_mask(subnet, keep_masks)
 
         for _ in range(self.steps):
             adv_images.requires_grad = True
-            outputs = self.get_logits(adv_images)
+            if self._normalization_applied:
+                adv_images = self.normalize(adv_images)
+            outputs = subnet(adv_images)
 
             # Calculate loss
             if self.targeted:
@@ -78,6 +79,6 @@ class SPA(Attack):
         self.remove_handles(handles)
         del handles
         del keep_masks
-        del self.model
+        del subnet
 
         return adv_images
