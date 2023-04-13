@@ -9,7 +9,6 @@ class SPAL2(Attack):
 
     def __init__(self, model, device, eps=0.5, alpha=0.1, steps=10, random_start=True, eps_for_division=1e-10, keep_ratio=0.05, minus=False, rand=False):
         super().__init__("SPAL2", model)
-        self.model0 = model
         self.eps = eps
         self.alpha = alpha
         self.steps = steps
@@ -58,13 +57,15 @@ class SPAL2(Attack):
             delta *= r/n*self.eps
             adv_images = torch.clamp(adv_images + delta, min=0, max=1).detach()
 
-        keep_masks = SNIP(adv_images, labels, self.model0, self.keep_ratio, self.device, minus=self.minus, rand=self.rand)
-        self.model = copy.deepcopy(self.model0).to(self.device)
+        keep_masks = SNIP(adv_images, labels, self.model, self.keep_ratio, self.device, minus=self.minus, rand=self.rand)
+        subnet = copy.deepcopy(self.model).to(self.device)
         handles = self.apply_prune_mask(self.model, keep_masks)
 
         for _ in range(self.steps):
             adv_images.requires_grad = True
-            outputs = self.get_logits(adv_images)
+            if self._normalization_applied:
+                adv_images = self.normalize(adv_images)
+            outputs = subnet(adv_images)
 
             # Calculate loss
             if self.targeted:
@@ -89,6 +90,6 @@ class SPAL2(Attack):
         self.remove_handles(handles)
         del handles
         del keep_masks
-        del self.model
+        del subnet
 
         return adv_images
