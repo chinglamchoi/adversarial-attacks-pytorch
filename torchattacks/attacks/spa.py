@@ -7,8 +7,9 @@ from snip import SNIP
 
 class SPA(Attack):
 
-    def __init__(elf, model0, device, eps=8/255, alpha=2/255, steps=10, random_start=True, eps_for_division=1e-10, keep_ratio=0.05, minus=False, rand=False):
-        super().__init__("SPA", model0)
+    def __init__(self, model, device, eps=8/255, alpha=2/255, steps=10, random_start=True, eps_for_division=1e-10, keep_ratio=0.05, minus=False, rand=False):
+        super().__init__("SPA", model)
+        self.model0 = model
         self.eps = eps
         self.alpha = alpha
         self.steps = steps
