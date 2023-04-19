@@ -31,7 +31,8 @@ def SNIP(inputs, targets, net, keep_ratio, device, minus=False, rand=False):
 
     net.zero_grad()
     outputs = net.forward(inputs)
-    loss = F.nll_loss(outputs, targets)
+    loss = F.nll_loss( F.log_softmax(outputs, dim=1), targets)
+    print(loss.item())
     loss.backward()
     if rand:
         grads = []
