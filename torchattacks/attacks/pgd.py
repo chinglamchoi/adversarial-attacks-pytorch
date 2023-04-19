@@ -48,7 +48,8 @@ class PGD(Attack):
         if self.targeted:
             target_labels = self.get_target_label(images, labels)
 
-        loss = nn.CrossEntropyLoss()
+        #loss = nn.CrossEntropyLoss()
+        loss = nn.NLLLoss()
         adv_images = images.clone().detach()
 
         if self.random_start:
